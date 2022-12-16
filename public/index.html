@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>final</title>
+  <script src="https://cdn.jsdelivr.net/npm/node-vibrant@3.1.5/dist/vibrant.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" />
+  <style type="text/css">
+    #login,
+    #loggedin {
+      display: none;
+    }
+
+    .text-overflow {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 500px;
+    }
+  </style>
+  <!-- FONTS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div id="login">
+    <h1>Spotify Final</h1>
+    <a href="/login" class="btn btn-primary" id='enter'>enter</a>
+  </div>
+  <div id="loggedin">
+    <div id="user-profile"></div>
+    <div id="oauth"></div>
+
+    <a href="http://localhost:8888/">
+      <div id='title'>spotify visualizer</div>
+    </a>
+
+    <!-- 3D MODEL -->
+    <div id="model"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+      integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ=="
+      crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="main.js" type="module"></script>
+
+    <!-- TRACK ANALYSIS -->
+    <div id='analysis'>
+      <div id='danceability'></div>
+      <div id='energy'></div>
+      <div id='valence'></div>
+      <div id='loudness'></div>
+      <div id='tempo'></div>
+      <div id='instrumentalness'></div>
+      <div id='acousticness'></div>
+      <div id='liveness'></div>
+    </div>
+    <!-- TRACK ANALYSIS DEFINITION -->
+    <div class="popups">
+      <div class="popup" id='danceabilityDef'>
+        <h3>danceability</h3>
+        Describes how suitable a track is for dancing based on a combination of musical elements including tempo,
+        rhythm, stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most
+        danceable.
+      </div>
+      <div class="popup" id='energyDef'>
+        <h3>energy</h3>
+        Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically,
+        energetic tracks feel fast, loud, and noisy.
+      </div>
+      <div class="popup" id='valenceDef'>
+        <h3>valence</h3>
+        A measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence
+        sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g.
+        sad, depressed, angry).
+      </div>
+      <div class="popup" id='loudnessDef'>
+        <h3>loudness</h3>
+        The overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track. Values
+        typical range between -60 and 0 db.
+      </div>
+      <div class="popup" id='tempoDef'>
+        <h3>tempo</h3>
+        The overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or
+        pace of a given piece and derives directly from the average beat duration.
+      </div>
+      <div class="popup" id='instrumentalnessDef'>
+        <h3>instrumentalness</h3>
+        Predicts whether a track contains no vocals. The closer the instrumentalness value is to 1.0, the greater
+        likelihood the track contains no vocal content.
+      </div>
+      <div class="popup" id='acousticnessDef'>
+        <h3>acousticness</h3>
+        A measure from 0.0 to 1.0 of whether the track is acoustic.
+      </div>
+      <div class="popup" id='livenessDef'>
+        <h3>liveness</h3>
+        Detects the presence of an audience in the recording. Higher liveness values represent an increased probability
+        that the track was performed live.
+      </div>
+    </div>
+
+
+    <!-- TRACK NAME, ARTIST, ALBUM COVER INFO -->
+    <div id='trackInfo'>
+      <img id='album' src="" alt="">
+      <div id='info'>
+        <div id='track'></div>
+        <div id='artist'></div>
+      </div>
+    </div>
+
+    <!-- PLAYER CONTROLS -->
+    <div class='wrapper'>
+      <div id='player'>
+        <button id='previousTrack'><<</button>
+            <button id='playTrack'>play</button>
+            <button id='pauseTrack'>pause</button>
+            <button id='nextTrack'>>></button>
+      </div>
+    </div>
+
+    <!-- COLOR PALETTE (FROM ALBUM COVER) -->
+    <div id='palette'>
+      <div class='swatch' id='s1'></div>
+      <div class='swatch' id='s2'></div>
+      <div class='swatch' id='s3'></div>
+      <div class='swatch' id='s4'></div>
+      <div class='swatch' id='s5'></div>
+      <div class='swatch' id='s6'></div>
+    </div>
+
+
+
+    <!-- JAVASCRIPT -->
+    <script id="user-profile-template" type="text/x-handlebars-template">
+    <a href="https://open.spotify.com/user/burn.like.hell?si=8310678b878049f4" target="_blank"><h1 class='text' id='username'>{{display_name}}</h1></a>
+        <div class='pull-left'>
+          <img class='profileImg' width='150' src='{{images.0.url}}' />
+        </div>
+    </script>
+
+    <!-- DON'T DELETE! -->
+    <script id="oauth-template" type="text/x-handlebars-template">
+    </script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
+
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+
+    <script>
+      (function () {
+        /**
+         * Obtains parameters from the hash of the URL
+         * @return Object
+         */
+        function getHashParams() {
+          var hashParams = {};
+          var e,
+            r = /([^&;=]+)=?([^&;]*)/g,
+            q = window.location.hash.substring(1);
+          while ((e = r.exec(q))) {
+            hashParams[e[1]] = decodeURIComponent(e[2]);
+          }
+          return hashParams;
+        }
+
+        var userProfileSource = document.getElementById(
+          'user-profile-template'
+        ).innerHTML,
+          userProfileTemplate = Handlebars.compile(userProfileSource),
+          userProfilePlaceholder = document.getElementById('user-profile');
+
+        var oauthSource = document.getElementById('oauth-template').innerHTML,
+          oauthTemplate = Handlebars.compile(oauthSource),
+          oauthPlaceholder = document.getElementById('oauth');
+
+        var params = getHashParams();
+
+        var access_token = params.access_token,
+          refresh_token = params.refresh_token,
+          error = params.error;
+
+        if (error) {
+          alert('There was an error during the authentication');
+        } else {
+          if (access_token) {
+            // render oauth info
+            oauthPlaceholder.innerHTML = oauthTemplate({
+              access_token: access_token,
+              refresh_token: refresh_token,
+            });
+
+            $.ajax({
+              url: 'https://api.spotify.com/v1/me',
+              headers: {
+                Authorization: 'Bearer ' + access_token,
+              },
+              success: function (response) {
+                userProfilePlaceholder.innerHTML =
+                  userProfileTemplate(response);
+
+                $('#login').hide();
+                $('#loggedin').show();
+
+                getSpotify();
+
+                // checking to see if song has changed every 10 seconds //
+                var interval = setInterval(getSpotify, 10000);
+
+                var nextTrack = document.getElementById('nextTrack');
+                nextTrack.addEventListener('click', () => {
+                  // console.log('next');
+                  fetch('https://api.spotify.com/v1/me/player/next', {
+                    method: 'POST',
+                    headers: {
+                      Authorization: 'Bearer ' + access_token,
+                      'Content-Type': 'application/json',
+                    },
+                  })
+                    .then(result => {
+                      document.getElementById('track').innerHTML = '';
+                      document.getElementById('artist').innerHTML = '';
+                      document.getElementById('album').src = '';
+                      getSpotify();
+                    })
+                });
+
+                var previousTrack = document.getElementById('previousTrack');
+                previousTrack.addEventListener('click', () => {
+                  // console.log('previous');
+                  fetch('https:api.spotify.com/v1/me/player/previous', {
+                    method: 'POST',
+                    headers: {
+                      Authorization: 'Bearer ' + access_token,
+                      'Content-Type': 'application/json',
+                    },
+                  })
+                    .then(result => {
+                      document.getElementById('track').innerHTML = '';
+                      document.getElementById('artist').innerHTML = '';
+                      document.getElementById('album').src = '';
+                      getSpotify();
+                    })
+                });
+
+                var pauseTrack = document.getElementById('pauseTrack');
+                pauseTrack.addEventListener('click', () => {
+                  fetch('	https://api.spotify.com/v1/me/player/pause', {
+                    method: 'PUT',
+                    headers: {
+                      Authorization: 'Bearer ' + access_token,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+                });
+
+                // DOES NOT WORK RN !!!!!! //
+                var playTrack = document.getElementById('playTrack');
+                playTrack.addEventListener('click', () => {
+                  fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+                    method: 'GET',
+                    headers: {
+                      Authorization: 'Bearer ' + access_token,
+                      'Content-Type': 'application/json',
+                    },
+                  })
+                    .then(result => result.json())
+                    .then(result => {
+                      fetch('https://api.spotify.com/v1/me/player/play', {
+                        method: 'PUT',
+                        headers: {
+                          Authorization: 'Bearer ' + access_token,
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          'context_uri': result.item.uri,
+                          'position_ms': 0,
+                        }),
+                      })
+                        .then(result => {
+                          console.log(result.item.uri)
+                        })
+                    })
+                });
+
+
+                // CHECKING IF SONG IS THE SAME EVERY 10 SECONDS //
+
+                // FUNCTION TO GET TRACK INFO AND ANALYSIS //
+                function getSpotify() {
+                  fetch('https://api.spotify.com/v1/me/player/currently-playing', {
+                    method: 'GET',
+                    headers: {
+                      Authorization: 'Bearer ' + access_token,
+                      'Content-Type': 'application/json',
+                    },
+                  })
+                    .then(result => result.json())
+                    .then(result => {
+                      console.log(result);
+                      //after I get my access token, I use it to search for a spotify track
+
+                      // ATTEMPTING TO CLEAR URL //
+
+                      // CREATE HTML //
+                      //making sure to clear previous display//
+                      document.getElementById('track').innerHTML = '';
+                      document.getElementById('artist').innerHTML = '';
+                      document.getElementById('album').src = '';
+                      // UPDATING TRACK INFO //
+                      document.getElementById('track').innerHTML = result.item.name;
+                      document.getElementById('artist').innerHTML = result.item.artists[0].name;
+                      document.getElementById('album').src = result.item.album.images[0].url;
+                      // add error -- end of json missing error //
+
+                      // COLOR PALETTE //
+                      var img = document.getElementById('album');
+                      img.crossOrigin = 'Anonymous';
+
+                      new Vibrant(img).getPalette()
+                        .then(palette => {
+                          console.log(palette);
+                          const colors = [];
+                          number = 0;
+                          for (let color in palette) {
+                            const hex = palette[color].getHex();
+                            colors.push({ hex });
+                          };
+                          console.log(colors);
+                          document.getElementById('s1').style.backgroundColor = colors[0].hex;
+                          document.getElementById('s2').style.backgroundColor = colors[1].hex;
+                          document.getElementById('s3').style.backgroundColor = colors[2].hex;
+                          document.getElementById('s4').style.backgroundColor = colors[3].hex;
+                          document.getElementById('s5').style.backgroundColor = colors[4].hex;
+                          document.getElementById('s6').style.backgroundColor = colors[5].hex;
+                        });
+
+                      // GETTING TRACK ANALYSIS INFO //
+                      fetch(`https://api.spotify.com/v1/audio-features/${result.item.id}`, {
+                        method: 'GET',
+                        headers: {
+                          Authorization: 'Bearer ' + access_token,
+                          'Content-Type': 'application/json',
+                        },
+                      })
+                        .then(result => result.json())
+                        .then(result => {
+                          //after I get my access token, I use it to search for a spotify track
+                          console.log(result);
+                          // create html
+
+                          // TRACK INFO //
+                          document.getElementById('danceability').innerHTML = '';
+                          document.getElementById('energy').innerHTML = '';
+                          document.getElementById('valence').innerHTML = '';
+                          document.getElementById('loudness').innerHTML = '';
+                          document.getElementById('tempo').innerHTML = '';
+                          document.getElementById('instrumentalness').innerHTML = '';
+                          document.getElementById('acousticness').innerHTML = '';
+                          document.getElementById('liveness').innerHTML = '';
+
+                          document.getElementById('danceability').innerHTML = `danceability: ${result.danceability}`;
+                          document.getElementById('energy').innerHTML = `energy: ${result.energy}`;
+                          document.getElementById('valence').innerHTML = `valence: ${result.valence}`;
+                          document.getElementById('loudness').innerHTML = `loudness: ${result.loudness}`;
+                          document.getElementById('tempo').innerHTML = `tempo: ${result.tempo}`;
+                          document.getElementById('instrumentalness').innerHTML = `instrumentalness: ${result.instrumentalness}`;
+                          document.getElementById('acousticness').innerHTML = `acousticness: ${result.acousticness}`;
+                          document.getElementById('liveness').innerHTML = `liveness: ${result.liveness}`;
+                        });
+                    });
+                  // TOOGGLING VISIBILITY OF ANALYSIS DEFINITIONS //
+                  var danceability = document.getElementById('danceability');
+                  danceability.addEventListener('mouseover', () => {
+                    document.getElementById('danceabilityDef').style.display = 'block';
+                  });
+                  danceability.addEventListener('mouseout', () => {
+                    document.getElementById('danceabilityDef').style.display = 'none';
+                  });
+                  var energy = document.getElementById('energy');
+                  energy.addEventListener('mouseover', () => {
+                    document.getElementById('energyDef').style.display = 'block';
+                  });
+                  energy.addEventListener('mouseout', () => {
+                    document.getElementById('energyDef').style.display = 'none';
+                  });
+                  var valence = document.getElementById('valence');
+                  valence.addEventListener('mouseover', () => {
+                    document.getElementById('valenceDef').style.display = 'block';
+                  });
+                  valence.addEventListener('mouseout', () => {
+                    document.getElementById('valenceDef').style.display = 'none';
+                  });
+                  var loudness = document.getElementById('loudness');
+                  loudness.addEventListener('mouseover', () => {
+                    document.getElementById('loudnessDef').style.display = 'block';
+                  });
+                  loudness.addEventListener('mouseout', () => {
+                    document.getElementById('loudnessDef').style.display = 'none';
+                  });
+                  var tempo = document.getElementById('tempo');
+                  tempo.addEventListener('mouseover', () => {
+                    document.getElementById('tempoDef').style.display = 'block';
+                  });
+                  tempo.addEventListener('mouseout', () => {
+                    document.getElementById('tempoDef').style.display = 'none';
+                  });
+                  var instrumentalness = document.getElementById('instrumentalness');
+                  instrumentalness.addEventListener('mouseover', () => {
+                    document.getElementById('instrumentalnessDef').style.display = 'block';
+                  });
+                  instrumentalness.addEventListener('mouseout', () => {
+                    document.getElementById('instrumentalnessDef').style.display = 'none';
+                  });
+                  var acousticness = document.getElementById('acousticness');
+                  acousticness.addEventListener('mouseover', () => {
+                    document.getElementById('acousticnessDef').style.display = 'block';
+                  });
+                  acousticness.addEventListener('mouseout', () => {
+                    document.getElementById('acousticnessDef').style.display = 'none';
+                  });
+                  var liveness = document.getElementById('liveness');
+                  liveness.addEventListener('mouseover', () => {
+                    document.getElementById('livenessDef').style.display = 'block';
+                  });
+                  liveness.addEventListener('mouseout', () => {
+                    document.getElementById('livenessDef').style.display = 'none';
+                  });
+                }
+              },
+            });
+          } else {
+            // render initial screen
+            $('#login').show();
+            $('#loggedin').hide();
+          }
+          // document.getElementById('obtain-new-token').addEventListener(
+          //   'click',
+          //   function () {
+          //     $.ajax({
+          //       url: '/refresh_token',
+          //       data: {
+          //         refresh_token: refresh_token,
+          //       },
+          //     }).done(function (data) {
+          //       access_token = data.access_token;
+          //       oauthPlaceholder.innerHTML = oauthTemplate({
+          //         access_token: access_token,
+          //         refresh_token: refresh_token,
+          //       });
+          //     });
+          //   },
+          //   false
+          // );
+        }
+      })();
+
+
+    </script>
+</body>
+
+</html>
